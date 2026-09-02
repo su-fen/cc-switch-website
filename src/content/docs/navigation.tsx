@@ -1,98 +1,147 @@
 import type { ReactNode } from 'react';
-import { HelpCircle, Puzzle, Rocket, Server, Users } from 'lucide-react';
+import { HelpCircle, Palette, Puzzle, Rocket, Server, Users, FileText } from 'lucide-react';
+import type { Language } from '@/i18n/translations';
+import menuConfig from '../../../docs/menu.json';
+
+/** docs/menu.json 的结构定义 */
+export interface DocMenuTitle {
+  zh: string;
+  en?: string;
+  ja?: string;
+}
+
+export interface DocMenuItem {
+  id: string;
+  title: DocMenuTitle;
+  /** 相对 docs/{lang}/ 的 Markdown 文件路径 */
+  doc?: string;
+  /** 子菜单，支持任意层级嵌套 */
+  items?: DocMenuItem[];
+}
+
+export interface DocMenuSection extends DocMenuItem {
+  icon?: string;
+  /** 点击分组标题时默认展示的子项 id（缺省为第一个有文档的子项） */
+  defaultItem?: string;
+}
+
+export interface DocMenuConfig {
+  editBaseUrl?: string;
+  sections: DocMenuSection[];
+}
+
+export const docMenu = menuConfig as DocMenuConfig;
+
+/** 运行时使用的导航节点（标题已本地化、icon 已实例化） */
+export interface DocNavItem {
+  id: string;
+  /** 从 section 往下用 / 连接的完整路径，作为 URL 中的 item 参数 */
+  path: string;
+  title: string;
+  doc?: string;
+  items?: DocNavItem[];
+}
 
 export interface DocSection {
   id: string;
   title: string;
   icon?: ReactNode;
-  items?: {
-    id: string;
-    title: string;
-  }[];
+  doc?: string;
+  defaultItem?: string;
+  items?: DocNavItem[];
 }
 
-export const defaultDocSections: DocSection[] = [
-  {
-    id: 'getting-started',
-    title: '快速入门',
-    icon: <Rocket className="w-4 h-4" />,
-    items: [
-      { id: 'introduction', title: '软件介绍' },
-      { id: 'installation', title: '安装指南' },
-      { id: 'interface', title: '界面概览' },
-      { id: 'quickstart', title: '快速上手' },
-      { id: 'settings', title: '个性化配置' },
-    ],
-  },
-  {
-    id: 'providers',
-    title: '供应商管理',
-    icon: <Users className="w-4 h-4" />,
-    items: [
-      { id: 'add', title: '添加供应商' },
-      { id: 'switch', title: '切换供应商' },
-      { id: 'edit', title: '编辑供应商' },
-      { id: 'sort-duplicate', title: '排序与复制' },
-      { id: 'usage-query', title: '用量查询' },
-      { id: 'claude-desktop', title: 'Claude Desktop' },
-    ],
-  },
-  {
-    id: 'extensions',
-    title: '扩展功能',
-    icon: <Puzzle className="w-4 h-4" />,
-    items: [
-      { id: 'mcp', title: 'MCP 服务器' },
-      { id: 'prompts', title: 'Prompts 提示词' },
-      { id: 'skills', title: 'Skills 技能' },
-      { id: 'sessions', title: '会话管理器' },
-      { id: 'workspace', title: '工作区与记忆' },
-    ],
-  },
-  {
-    id: 'proxy',
-    title: '代理与高可用',
-    icon: <Server className="w-4 h-4" />,
-    items: [
-      { id: 'service', title: '代理服务' },
-      { id: 'routing', title: '应用路由' },
-      { id: 'failover', title: '故障转移' },
-      { id: 'usage', title: '用量统计' },
-      { id: 'model-test', title: '模型检查' },
-    ],
-  },
-  {
-    id: 'faq',
-    title: '常见问题',
-    icon: <HelpCircle className="w-4 h-4" />,
-    items: [
-      { id: 'config-files', title: '配置文件说明' },
-      { id: 'questions', title: 'FAQ' },
-      { id: 'deeplink', title: '深度链接协议' },
-      { id: 'env-conflict', title: '环境变量冲突' },
-    ],
-  },
-];
-
-type DocNavTranslations = {
-  docs?: {
-    nav?: {
-      sections?: Record<string, string>;
-      items?: Record<string, string>;
-    };
-  };
+const ICON_MAP: Record<string, ReactNode> = {
+  rocket: <Rocket className="w-4 h-4" />,
+  users: <Users className="w-4 h-4" />,
+  puzzle: <Puzzle className="w-4 h-4" />,
+  server: <Server className="w-4 h-4" />,
+  'help-circle': <HelpCircle className="w-4 h-4" />,
+  palette: <Palette className="w-4 h-4" />,
+  'file-text': <FileText className="w-4 h-4" />,
 };
 
-export function getDocSections(t: DocNavTranslations): DocSection[] {
-  const sectionTitles = t.docs?.nav?.sections ?? {};
-  const itemTitles = t.docs?.nav?.items ?? {};
+function localizeTitle(title: DocMenuTitle, language: Language): string {
+  return title[language] ?? title.zh;
+}
 
-  return defaultDocSections.map((section) => ({
-    ...section,
-    title: sectionTitles[section.id] ?? section.title,
-    items: section.items?.map((item) => ({
-      ...item,
-      title: itemTitles[item.id] ?? item.title,
-    })),
+function toNavItems(items: DocMenuItem[] | undefined, language: Language, parentPath: string): DocNavItem[] | undefined {
+  if (!items || items.length === 0) return undefined;
+
+  return items.map((item) => {
+    const path = parentPath ? `${parentPath}/${item.id}` : item.id;
+    return {
+      id: item.id,
+      path,
+      title: localizeTitle(item.title, language),
+      doc: item.doc,
+      items: toNavItems(item.items, language, path),
+    };
+  });
+}
+
+const sectionsCache = new Map<Language, DocSection[]>();
+
+export function getDocSections(language: Language): DocSection[] {
+  const cached = sectionsCache.get(language);
+  if (cached) return cached;
+
+  const sections = docMenu.sections.map((section) => ({
+    id: section.id,
+    title: localizeTitle(section.title, language),
+    icon: section.icon ? ICON_MAP[section.icon] : undefined,
+    doc: section.doc,
+    defaultItem: section.defaultItem,
+    items: toNavItems(section.items, language, ''),
   }));
+
+  sectionsCache.set(language, sections);
+  return sections;
+}
+
+export interface FlattenedDocNavItem {
+  sectionId: string;
+  /** 为空表示 section 本身（展示默认文档） */
+  itemPath?: string;
+  title: string;
+  sectionTitle: string;
+  doc?: string;
+}
+
+/** 深度优先展平导航树，用于上一页/下一页、搜索和站点地图 */
+export function flattenDocSections(sections: DocSection[]): FlattenedDocNavItem[] {
+  const result: FlattenedDocNavItem[] = [];
+
+  const walk = (sectionId: string, sectionTitle: string, items: DocNavItem[] | undefined) => {
+    items?.forEach((item) => {
+      if (item.doc) {
+        result.push({ sectionId, itemPath: item.path, title: item.title, sectionTitle, doc: item.doc });
+      }
+      walk(sectionId, sectionTitle, item.items);
+    });
+  };
+
+  sections.forEach((section) => {
+    result.push({ sectionId: section.id, title: section.title, sectionTitle: section.title, doc: section.doc });
+    walk(section.id, section.title, section.items);
+  });
+
+  return result;
+}
+
+/** 按 path（如 "advanced/nested-menu"）在 section 内查找导航节点 */
+export function findDocNavItem(section: DocSection, itemPath: string): DocNavItem | undefined {
+  const walk = (items: DocNavItem[] | undefined): DocNavItem | undefined => {
+    if (!items) return undefined;
+    for (const item of items) {
+      if (item.path === itemPath) return item;
+      if (itemPath.startsWith(`${item.path}/`)) {
+        const found = walk(item.items);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+
+  return walk(section.items);
 }

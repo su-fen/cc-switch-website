@@ -385,3 +385,11 @@ pre[class*="language-"] {
 .token.entity {
   cursor: help;
 }
+
+/* react-medium-image-zoom：遮罩跟随站点主题背景色 */
+[data-rmiz-modal-overlay='visible'] {
+  background-color: hsl(var(--background) / 0.95);
+}
+[data-rmiz-modal-overlay='hidden'] {
+  background-color: hsl(var(--background) / 0);
+}

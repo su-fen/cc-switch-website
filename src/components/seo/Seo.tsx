@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getDocSections } from '@/content/docs/navigation';
+import { getDocSections, findDocNavItem } from '@/content/docs/navigation';
 import { getLocalizedPath, stripLanguageFromPathname, SUPPORTED_LANGUAGES } from '@/i18n/routes';
 import { useLanguage } from '@/i18n/useLanguage';
 import {
@@ -265,12 +265,12 @@ export function Seo() {
     const routeKey = getRouteKey(basePath);
     const normalizedSearch = getNormalizedSearch(basePath, location.search);
     const copy = seoCopy[language][routeKey];
-    const docSections = routeKey === 'docs' ? getDocSections(t) : [];
+    const docSections = routeKey === 'docs' ? getDocSections(language) : [];
     const searchParams = new URLSearchParams(normalizedSearch);
     const activeSection = searchParams.get('section') || 'getting-started';
     const activeItem = searchParams.get('item') || undefined;
     const section = docSections.find((item) => item.id === activeSection);
-    const item = section?.items?.find((navItem) => navItem.id === activeItem);
+    const item = section && activeItem ? findDocNavItem(section, activeItem) : undefined;
     const docsTitle = item?.title || section?.title || t.docs.title;
     const title = routeKey === 'docs' ? getDocsTitle(language, docsTitle, section?.title) : copy.title;
     const description = routeKey === 'docs' && section

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, FileText, ArrowRight, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getDocSections } from '@/content/docs/navigation';
+import { getDocSections, flattenDocSections } from '@/content/docs/navigation';
 import { useLanguage } from '@/i18n/useLanguage';
 
 interface SearchResult {
@@ -10,8 +10,6 @@ interface SearchResult {
   itemId?: string;
   title: string;
   sectionTitle: string;
-  content: string;
-  type: 'section' | 'heading' | 'content';
 }
 
 interface DocsSearchProps {
@@ -23,38 +21,18 @@ interface DocsSearchProps {
 export function DocsSearch({ isOpen, onClose, onNavigate }: DocsSearchProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const { t } = useLanguage();
-  const sections = useMemo(() => getDocSections(t), [t]);
+  const { language, t } = useLanguage();
+  const sections = useMemo(() => getDocSections(language), [language]);
 
-  // Build searchable index
-  const searchIndex = useMemo(() => {
-    const results: SearchResult[] = [];
-
-    sections.forEach(section => {
-      // Add section
-      results.push({
-        sectionId: section.id,
-        title: section.title,
-        sectionTitle: section.title,
-        content: '',
-        type: 'section',
-      });
-
-      // Add items
-      section.items?.forEach(item => {
-        results.push({
-          sectionId: section.id,
-          itemId: item.id,
-          title: item.title,
-          sectionTitle: section.title,
-          content: '',
-          type: 'section',
-        });
-      });
-    });
-
-    return results;
-  }, [sections]);
+  // Build searchable index（递归包含所有层级的菜单项）
+  const searchIndex = useMemo<SearchResult[]>(() => (
+    flattenDocSections(sections).map((entry) => ({
+      sectionId: entry.sectionId,
+      itemId: entry.itemPath,
+      title: entry.title,
+      sectionTitle: entry.sectionTitle,
+    }))
+  ), [sections]);
 
   // Filter results
   const filteredResults = useMemo(() => {

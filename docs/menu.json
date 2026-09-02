@@ -1,0 +1,189 @@
+{
+  "editBaseUrl": "https://github.com/su-fen/cc-switch-website/edit/main",
+  "sections": [
+    {
+      "id": "getting-started",
+      "icon": "rocket",
+      "title": { "zh": "快速入门", "en": "Getting Started", "ja": "クイックスタート" },
+      "items": [
+        {
+          "id": "introduction",
+          "title": { "zh": "软件介绍", "en": "Introduction", "ja": "ソフトウェア紹介" },
+          "doc": "1-getting-started/1.1-introduction.md"
+        },
+        {
+          "id": "installation",
+          "title": { "zh": "安装指南", "en": "Installation", "ja": "インストールガイド" },
+          "doc": "1-getting-started/1.2-installation.md"
+        },
+        {
+          "id": "interface",
+          "title": { "zh": "界面概览", "en": "Interface Overview", "ja": "インターフェース概要" },
+          "doc": "1-getting-started/1.3-interface.md"
+        },
+        {
+          "id": "quickstart",
+          "title": { "zh": "快速上手", "en": "Quick Start", "ja": "クイックスタート" },
+          "doc": "1-getting-started/1.4-quickstart.md"
+        },
+        {
+          "id": "settings",
+          "title": { "zh": "个性化配置", "en": "Settings", "ja": "設定" },
+          "doc": "1-getting-started/1.5-settings.md"
+        }
+      ]
+    },
+    {
+      "id": "providers",
+      "icon": "users",
+      "title": { "zh": "供应商管理", "en": "Provider Management", "ja": "プロバイダー管理" },
+      "items": [
+        {
+          "id": "add",
+          "title": { "zh": "添加供应商", "en": "Add Provider", "ja": "プロバイダー追加" },
+          "doc": "2-providers/2.1-add.md"
+        },
+        {
+          "id": "switch",
+          "title": { "zh": "切换供应商", "en": "Switch Provider", "ja": "プロバイダー切替" },
+          "doc": "2-providers/2.2-switch.md"
+        },
+        {
+          "id": "edit",
+          "title": { "zh": "编辑供应商", "en": "Edit Provider", "ja": "プロバイダー編集" },
+          "doc": "2-providers/2.3-edit.md"
+        },
+        {
+          "id": "sort-duplicate",
+          "title": { "zh": "排序与复制", "en": "Sort & Duplicate", "ja": "並べ替え＆複製" },
+          "doc": "2-providers/2.4-sort-duplicate.md"
+        },
+        {
+          "id": "usage-query",
+          "title": { "zh": "用量查询", "en": "Usage Query", "ja": "使用量クエリ" },
+          "doc": "2-providers/2.5-usage-query.md"
+        },
+        {
+          "id": "claude-desktop",
+          "title": { "zh": "Claude Desktop", "en": "Claude Desktop", "ja": "Claude Desktop" },
+          "doc": "2-providers/2.6-claude-desktop.md"
+        }
+      ]
+    },
+    {
+      "id": "extensions",
+      "icon": "puzzle",
+      "title": { "zh": "扩展功能", "en": "Extensions", "ja": "拡張機能" },
+      "items": [
+        {
+          "id": "mcp",
+          "title": { "zh": "MCP 服务器", "en": "MCP Server", "ja": "MCP サーバー" },
+          "doc": "3-extensions/3.1-mcp.md"
+        },
+        {
+          "id": "prompts",
+          "title": { "zh": "Prompts 提示词", "en": "Prompts", "ja": "プロンプト" },
+          "doc": "3-extensions/3.2-prompts.md"
+        },
+        {
+          "id": "skills",
+          "title": { "zh": "Skills 技能", "en": "Skills", "ja": "スキル" },
+          "doc": "3-extensions/3.3-skills.md"
+        },
+        {
+          "id": "sessions",
+          "title": { "zh": "会话管理器", "en": "Session Manager", "ja": "セッションマネージャー" },
+          "doc": "3-extensions/3.4-sessions.md"
+        },
+        {
+          "id": "workspace",
+          "title": { "zh": "工作区与记忆", "en": "Workspace & Memory", "ja": "ワークスペースとメモリー" },
+          "doc": "3-extensions/3.5-workspace.md"
+        }
+      ]
+    },
+    {
+      "id": "proxy",
+      "icon": "server",
+      "title": { "zh": "本地路由与高可用", "en": "Local Routing & HA", "ja": "ローカルルーティングと高可用性" },
+      "items": [
+        {
+          "id": "service",
+          "title": { "zh": "路由服务", "en": "Routing Service", "ja": "ルーティングサービス" },
+          "doc": "4-proxy/4.1-service.md"
+        },
+        {
+          "id": "routing",
+          "title": { "zh": "应用路由", "en": "App Routing", "ja": "アプリルーティング" },
+          "doc": "4-proxy/4.2-routing.md"
+        },
+        {
+          "id": "failover",
+          "title": { "zh": "故障转移", "en": "Failover", "ja": "フェイルオーバー" },
+          "doc": "4-proxy/4.3-failover.md"
+        },
+        {
+          "id": "usage",
+          "title": { "zh": "用量统计", "en": "Usage Statistics", "ja": "使用統計" },
+          "doc": "4-proxy/4.4-usage.md"
+        },
+        {
+          "id": "model-test",
+          "title": { "zh": "模型检查", "en": "Model Test", "ja": "モデルテスト" },
+          "doc": "4-proxy/4.5-model-test.md"
+        }
+      ]
+    },
+    {
+      "id": "faq",
+      "icon": "help-circle",
+      "title": { "zh": "常见问题", "en": "FAQ", "ja": "よくある質問" },
+      "defaultItem": "questions",
+      "items": [
+        {
+          "id": "config-files",
+          "title": { "zh": "配置文件说明", "en": "Config Files", "ja": "設定ファイル" },
+          "doc": "5-faq/5.1-config-files.md"
+        },
+        {
+          "id": "questions",
+          "title": { "zh": "FAQ", "en": "FAQ", "ja": "FAQ" },
+          "doc": "5-faq/5.2-questions.md"
+        },
+        {
+          "id": "deeplink",
+          "title": { "zh": "深度链接协议", "en": "Deep Link Protocol", "ja": "ディープリンク" },
+          "doc": "5-faq/5.3-deeplink.md"
+        },
+        {
+          "id": "env-conflict",
+          "title": { "zh": "环境变量冲突", "en": "Env Conflict", "ja": "環境変数の競合" },
+          "doc": "5-faq/5.4-env-conflict.md"
+        }
+      ]
+    },
+    {
+      "id": "demo",
+      "icon": "palette",
+      "title": { "zh": "组件演示", "en": "Component Demo", "ja": "コンポーネントデモ" },
+      "items": [
+        {
+          "id": "components",
+          "title": { "zh": "Markdown 组件总览", "en": "Markdown Components", "ja": "Markdown コンポーネント" },
+          "doc": "6-demo/6.1-components.md"
+        },
+        {
+          "id": "advanced",
+          "title": { "zh": "进阶用法", "en": "Advanced Usage", "ja": "高度な使い方" },
+          "items": [
+            {
+              "id": "nested-menu",
+              "title": { "zh": "多级菜单示例", "en": "Nested Menu Example", "ja": "多階層メニュー例" },
+              "doc": "6-demo/6.2-nested-menu.md"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
