@@ -6,17 +6,11 @@ import { DocsMobileNav } from '@/components/docs/DocsMobileNav';
 import { MarkdownRenderer } from '@/components/docs/MarkdownRenderer';
 import { DocsSearch } from '@/components/docs/DocsSearch';
 import { TableOfContents } from '@/components/docs/TableOfContents';
-import { fetchDocContent, getDocSourcePath } from '@/content/docs';
-import { getDocSections } from '@/content/docs/navigation';
+import { fetchDocContent, getDocEditUrl } from '@/content/docs';
+import { getDocSections, flattenDocSections } from '@/content/docs/navigation';
 import { SiteFooter } from '@/components/ccswitch/SiteFooter';
 import { ChevronLeft, ChevronRight, Edit, Clock, Search } from 'lucide-react';
 import { useLanguage } from '@/i18n/useLanguage';
-
-type FlattenedDocNavItem = {
-  sectionId: string;
-  itemId?: string;
-  title: string;
-};
 
 export default function DocsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,7 +20,7 @@ export default function DocsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { language, t } = useLanguage();
-  const docSections = useMemo(() => getDocSections(t), [t]);
+  const docSections = useMemo(() => getDocSections(language), [language]);
 
   useEffect(() => {
     if (activeSection === 'proxy' && activeItem === 'takeover') {
@@ -71,22 +65,14 @@ export default function DocsPage() {
     setActiveItem(itemId);
   }, []);
 
-  const flattenedNav = useMemo<FlattenedDocNavItem[]>(() => (
-    docSections.flatMap((section) => {
-      const items: FlattenedDocNavItem[] = [{ sectionId: section.id, title: section.title }];
-      section.items?.forEach((item) => {
-        items.push({ sectionId: section.id, itemId: item.id, title: item.title });
-      });
-      return items;
-    })
-  ), [docSections]);
+  const flattenedNav = useMemo(() => flattenDocSections(docSections), [docSections]);
 
   const currentIndex = flattenedNav.findIndex(
-    nav => nav.sectionId === activeSection && nav.itemId === activeItem
+    nav => nav.sectionId === activeSection && nav.itemPath === activeItem
   );
   const prevNav = currentIndex > 0 ? flattenedNav[currentIndex - 1] : null;
-  const nextNav = currentIndex < flattenedNav.length - 1 ? flattenedNav[currentIndex + 1] : null;
-  const editPath = getDocSourcePath(language, activeSection, activeItem);
+  const nextNav = currentIndex >= 0 && currentIndex < flattenedNav.length - 1 ? flattenedNav[currentIndex + 1] : null;
+  const editUrl = getDocEditUrl(language, activeSection, activeItem);
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,7 +82,7 @@ export default function DocsPage() {
         onClose={() => setIsSearchOpen(false)}
         onNavigate={handleNavigate}
       />
-      
+
       <div className="pt-20 md:pt-24">
         <div className="container mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-4">
           <div className="flex gap-8 py-4 sm:py-6">
@@ -143,9 +129,9 @@ export default function DocsPage() {
                 <div className="mt-8 border-t border-border pt-6">
                   <div className="mb-8 flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
-                      {editPath && (
+                      {editUrl && (
                         <a
-                          href={`https://github.com/farion1231/cc-switch/edit/main/${editPath}`}
+                          href={editUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1.5 hover:text-foreground transition-colors"
@@ -165,7 +151,7 @@ export default function DocsPage() {
                   <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                     {prevNav ? (
                       <button
-                        onClick={() => handleNavigate(prevNav.sectionId, prevNav.itemId)}
+                        onClick={() => handleNavigate(prevNav.sectionId, prevNav.itemPath)}
                         className="group flex flex-col items-start rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
                       >
                         <span className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
@@ -177,10 +163,10 @@ export default function DocsPage() {
                     ) : (
                       <div />
                     )}
-                    
+
                     {nextNav ? (
                       <button
-                        onClick={() => handleNavigate(nextNav.sectionId, nextNav.itemId)}
+                        onClick={() => handleNavigate(nextNav.sectionId, nextNav.itemPath)}
                         className="group flex flex-col items-start rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50 sm:items-end sm:text-right"
                       >
                         <span className="text-sm text-muted-foreground mb-1 flex items-center gap-1">

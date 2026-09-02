@@ -1,148 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn, slugify } from '@/lib/utils';
-import { Copy, Check } from 'lucide-react';
+import {
+  remarkGfmAlerts,
+  remarkTabs,
+  GfmAlert,
+  MdTabs,
+  MdTabPanel,
+  MdImage,
+  CodeBlock,
+  parseCodeMeta,
+} from '@/plugins';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
 
-type PrismModule = typeof import('prismjs');
-
-const normalizePrismLanguage = (language: string) => {
-  const normalized = language.toLowerCase();
-
-  if (normalized === 'js') return 'javascript';
-  if (normalized === 'ts') return 'typescript';
-  if (['shell', 'sh', 'zsh', 'terminal'].includes(normalized)) return 'bash';
-  if (normalized === 'py') return 'python';
-
-  return normalized;
-};
-
-let prismPromise: Promise<PrismModule> | null = null;
-const prismLanguagePromises = new Map<string, Promise<unknown>>();
-
-const loadPrismCore = () => {
-  prismPromise ??= import('prismjs');
-  return prismPromise;
-};
-
-const prismLanguageLoaders: Record<string, () => Promise<unknown>> = {
-  javascript: () => import('prismjs/components/prism-javascript'),
-  typescript: async () => {
-    await loadPrismLanguage('javascript');
-    return import('prismjs/components/prism-typescript');
-  },
-  jsx: async () => {
-    await loadPrismLanguage('javascript');
-    return import('prismjs/components/prism-jsx');
-  },
-  tsx: async () => {
-    await loadPrismLanguage('jsx');
-    await loadPrismLanguage('typescript');
-    return import('prismjs/components/prism-tsx');
-  },
-  bash: () => import('prismjs/components/prism-bash'),
-  json: () => import('prismjs/components/prism-json'),
-  css: () => import('prismjs/components/prism-css'),
-  sql: () => import('prismjs/components/prism-sql'),
-  python: () => import('prismjs/components/prism-python'),
-  lua: () => import('prismjs/components/prism-lua'),
-};
-
-async function loadPrismLanguage(language: string) {
-  await loadPrismCore();
-
-  const normalized = normalizePrismLanguage(language);
-  const loader = prismLanguageLoaders[normalized];
-
-  if (!loader) return;
-
-  if (!prismLanguagePromises.has(normalized)) {
-    prismLanguagePromises.set(normalized, loader());
-  }
-
-  await prismLanguagePromises.get(normalized);
-}
-
-async function loadPrism(language: string) {
-  const prism = await loadPrismCore();
-  await loadPrismLanguage(language);
-  return prism;
-}
-
-function CodeBlock({ className, children }: { className?: string; children: string }) {
-  const [copied, setCopied] = useState(false);
-  const codeRef = useRef<HTMLElement>(null);
-  
-  // Extract language from className (e.g., "language-javascript")
-  const language = className?.replace('language-', '') || 'text';
-  
-  useEffect(() => {
-    let isActive = true;
-    const codeElement = codeRef.current;
-
-    if (!codeElement) return;
-
-    loadPrism(language)
-      .then((Prism) => {
-        if (isActive) {
-          Prism.highlightElement(codeElement);
-        }
-      })
-      .catch((error: unknown) => {
-        if (import.meta.env.DEV) {
-          console.warn('Failed to load Prism language:', language, error);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [children, language]);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(children);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="group relative max-w-full">
-      <div className="absolute right-2 top-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-        <button
-          onClick={handleCopy}
-          className="p-2 rounded-lg bg-muted/80 hover:bg-muted border border-border/50 transition-colors"
-          aria-label="Copy code"
-        >
-          {copied ? (
-            <Check className="w-4 h-4 text-green-500" />
-          ) : (
-            <Copy className="w-4 h-4 text-muted-foreground" />
-          )}
-        </button>
-      </div>
-      <div className="absolute left-3 top-2 text-xs text-muted-foreground/60 uppercase tracking-wider">
-        {language}
-      </div>
-      <pre className="max-w-full overflow-x-auto rounded-xl border border-border bg-card px-4 pb-4 pt-10 text-sm">
-        <code ref={codeRef} className={`language-${language}`}>
-          {children}
-        </code>
-      </pre>
-    </div>
-  );
-}
+// gfm-alert / md-tabs / md-tab-panel 是 remark 插件生成的自定义元素，
+// react-markdown 在运行时按标签名查找组件，这里通过断言扩展 Components 类型。
+const customComponents = {
+  'gfm-alert': GfmAlert,
+  'md-tabs': MdTabs,
+  'md-tab-panel': MdTabPanel,
+} as unknown as Components;
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
   return (
     <div className={cn('prose-docs max-w-full [overflow-wrap:anywhere]', className)}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkGfmAlerts, remarkTabs]}
         components={{
+          ...customComponents,
           h1: ({ children }) => {
             const id = slugify(String(children));
             return (
@@ -210,14 +99,17 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
               {children}
             </blockquote>
           ),
-          code: ({ className, children, ...props }) => {
+          code: ({ node, className, children, ...props }) => {
             const isBlock = className?.includes('language-');
             const codeString = String(children).replace(/\n$/, '');
-            
+
             if (isBlock) {
-              return <CodeBlock className={className}>{codeString}</CodeBlock>;
+              // 代码围栏的 meta（如 title="config.ts"）由 mdast-util-to-hast 挂在 node.data.meta 上
+              const meta = (node?.data as { meta?: string } | undefined)?.meta;
+              const { title } = parseCodeMeta(meta);
+              return <CodeBlock className={className} title={title}>{codeString}</CodeBlock>;
             }
-            
+
             return (
               <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary break-all" {...props}>
                 {children}
@@ -253,12 +145,8 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
           hr: () => (
             <hr className="border-border my-8" />
           ),
-          img: ({ src, alt }) => (
-            <img
-              src={src}
-              alt={alt}
-              className="my-6 max-w-full rounded-xl border border-border shadow-lg"
-            />
+          img: ({ src, alt, title }) => (
+            <MdImage src={typeof src === 'string' ? src : undefined} alt={alt} title={title ?? undefined} />
           ),
         }}
       >

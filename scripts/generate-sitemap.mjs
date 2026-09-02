@@ -23,28 +23,27 @@ const languages = [
   { code: 'ja', hreflang: 'ja' },
 ];
 
-const docSections = [
-  {
-    id: 'getting-started',
-    items: ['introduction', 'installation', 'interface', 'quickstart', 'settings'],
-  },
-  {
-    id: 'providers',
-    items: ['add', 'switch', 'edit', 'sort-duplicate', 'usage-query', 'claude-desktop'],
-  },
-  {
-    id: 'extensions',
-    items: ['mcp', 'prompts', 'skills', 'sessions', 'workspace'],
-  },
-  {
-    id: 'proxy',
-    items: ['service', 'routing', 'failover', 'usage', 'model-test'],
-  },
-  {
-    id: 'faq',
-    items: ['config-files', 'questions', 'deeplink', 'env-conflict'],
-  },
-];
+// 文档路由从 docs/menu.json 读取（与站点导航共用同一份配置）
+function loadDocPaths() {
+  const menu = JSON.parse(readFileSync('docs/menu.json', 'utf8'));
+  const paths = [];
+
+  const walk = (sectionId, items, parentPath) => {
+    for (const item of items ?? []) {
+      const itemPath = parentPath ? `${parentPath}/${item.id}` : item.id;
+      if (item.doc) {
+        paths.push(`/docs?section=${sectionId}&item=${itemPath}`);
+      }
+      walk(sectionId, item.items, itemPath);
+    }
+  };
+
+  for (const section of menu.sections ?? []) {
+    walk(section.id, section.items, '');
+  }
+
+  return paths;
+}
 
 function escapeXml(value) {
   return value
@@ -70,9 +69,7 @@ const routePaths = [
   '/changelog',
   '/tutorials',
   '/sponsors',
-  ...docSections.flatMap((section) => (
-    section.items.map((item) => `/docs?section=${section.id}&item=${item}`)
-  )),
+  ...loadDocPaths(),
 ];
 
 // Tutorials: each in-site article gets a per-language entry only when the
